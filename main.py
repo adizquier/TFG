@@ -7,8 +7,9 @@ import fitz as pdf
 from PySide2.QtWidgets import QFileDialog
 import faceDetector as fd
 import time
-
-
+import os
+import audiveris
+import subprocess
 
 
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
@@ -29,6 +30,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.detector = fd.FaceDetector()
 
         self.pdf = None
+        self.midi = None
         self.pdfloaded = False
 
         self.paginas_pdf = []
@@ -53,6 +55,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.text_buttom.setIcon(QtGui.QIcon("./iconos/text_icon.png"))
         self.text_buttom.setVisible(False)
 
+        self.play_buttom.setIcon(QtGui.QIcon("./iconos/play_icon.png"))
+        self.play_buttom.setVisible(False)
+
         self.captureButton.clicked.connect(self.start_stop_capture)
         self.useCameraButtom.clicked.connect(self.use_camera)
         self.detect_buttom.clicked.connect(self.change_text_detectButtom)
@@ -61,6 +66,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.xButtom.clicked.connect(self.x_buttom_clicked)
         self.right_buttom.clicked.connect(self.slide_right)
         self.left_buttom.clicked.connect(self.slide_left)
+        self.play_buttom.clicked.connect(self.reproducirMIDI)
 
     def start_stop_capture(self, detect):
         if detect:
@@ -93,7 +99,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def x_buttom_clicked(self):
 
-        self.active_desactive_buttoms(False, (self.xButtom, self.spinBox, self.left_buttom, self.right_buttom, self.edit_buttom, self.text_buttom))
+        self.active_desactive_buttoms(False, (self.xButtom, self.spinBox, self.left_buttom, self.right_buttom, 
+                                              self.edit_buttom, self.text_buttom, self.play_buttom))
 
         self.pdf = None
         self.paginas_pdf = []
@@ -133,14 +140,16 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     
         if self.useCameraButtom.isChecked():
 
-            self.active_desactive_buttoms(False, (self.spinBox, self.xButtom, self.right_buttom, self.left_buttom, self.edit_buttom, self.text_buttom))
+            self.active_desactive_buttoms(False, (self.spinBox, self.xButtom, self.right_buttom, self.left_buttom,
+                                                  self.edit_buttom, self.text_buttom, self.play_buttom))
 
             return self.imageVisor
         
         else:
             if self.pdfloaded is True:
 
-                self.active_desactive_buttoms(True, (self.spinBox, self.xButtom, self.right_buttom, self.left_buttom, self.edit_buttom, self.text_buttom))
+                self.active_desactive_buttoms(True, (self.spinBox, self.xButtom, self.right_buttom, self.left_buttom,
+                                                     self.edit_buttom, self.text_buttom, self.play_buttom))
 
                 return self.paginas_pdf[self.pagina_actual]
 
@@ -220,24 +229,50 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
             self.paginas_pdf.append(img_array)
 
+
+    def getMidiPartiture(self, rutaPDF):
+        nombreArchivo = os.path.splitext(os.path.basename(rutaPDF))[0]
+        directorioAlmacenamiento = "/home/adrian/Documentos/archivosMIDI/" #audiveris solo tiene acceso a la carpeta Documentos
+        
+
+        if not os.path.exists(directorioAlmacenamiento):
+            os.mkdir(directorioAlmacenamiento)
+        
+        rutaMIDI = directorioAlmacenamiento + nombreArchivo + "/"
+
+        if not os.path.exists(rutaMIDI):
+            os.mkdir(rutaMIDI)
+
+        self.midi = audiveris.convert_pdf_to_midi(rutaPDF, rutaMIDI, nombreArchivo)
+
+
+    def reproducirMIDI(self):
+
+        command = ["timidity", self.midi]
+        subprocess.run(command)
+
+
     def loadPDF(self):
         self.timer.timeout.disconnect(self.compute)
 
-        rutaPDF, _ = QFileDialog.getOpenFileName(self, "Open PDF File", "", "PDF Files (*.pdf)")
-        self.pdf = pdf.open(rutaPDF)
+        rutaPDF, _ = QFileDialog.getOpenFileName(self, "Open File", "", "Files (*.midi *.pdf)")
 
-        if self.pdf is not None:
-            self.getPDFinformation()
+        if rutaPDF:
+            self.getMidiPartiture(rutaPDF)
+            self.pdf = pdf.open(rutaPDF)
 
-            self.pdfloaded = True
+            if self.pdf is not None:
+                self.getPDFinformation()
 
-            self.active_desactive_buttoms(True, (self.spinBox, self.xButtom, self.left_buttom, self.right_buttom, self.edit_buttom, self.text_buttom))
+                self.pdfloaded = True
 
-            self.spinBox.setRange(1, len(self.paginas_pdf))
-            
+                self.active_desactive_buttoms(True, (self.spinBox, self.xButtom, self.left_buttom, self.right_buttom,
+                                                    self.edit_buttom, self.text_buttom, self.play_buttom))
+
+                self.spinBox.setRange(1, len(self.paginas_pdf))
 
         self.timer.timeout.connect(self.compute)
-
+            
   
 
 if __name__ == "__main__":

@@ -55,6 +55,12 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout.addWidget(self.text_buttom)
 
+        self.play_buttom = QPushButton(self.centralwidget)
+        self.play_buttom.setObjectName(u"play_buttom")
+        self.play_buttom.setMaximumSize(QSize(30, 30))
+
+        self.horizontalLayout.addWidget(self.play_buttom)
+
         self.useCameraButtom = QPushButton(self.centralwidget)
         self.useCameraButtom.setObjectName(u"useCameraButtom")
         sizePolicy1 = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
@@ -149,6 +155,7 @@ class Ui_MainWindow(object):
         self.xButtom.setText("")
         self.edit_buttom.setText("")
         self.text_buttom.setText("")
+        self.play_buttom.setText("")
         self.useCameraButtom.setText(QCoreApplication.translate("MainWindow", u"Use camera", None))
         self.captureButton.setText(QCoreApplication.translate("MainWindow", u"Stop capture", None))
         self.detect_buttom.setText(QCoreApplication.translate("MainWindow", u"Detect face", None))
