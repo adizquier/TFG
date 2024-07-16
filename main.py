@@ -27,6 +27,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.timer.timeout.connect(self.compute)
         self.timer.start(30)
 
+        self.iniCoorSelected = QPoint()
+        self.endCoorSelected = QPoint()
+        self.onSelection = False
+
         self.detector = fd.FaceDetector()
 
         self.pdf = None
@@ -68,6 +72,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.left_buttom.clicked.connect(self.slide_left)
         self.play_buttom.clicked.connect(self.reproducirMIDI)
 
+############################################################# Buttoms #############################################################
+
     def start_stop_capture(self, detect):
         if detect:
             self.captureButton.setText("Stop capture")
@@ -92,11 +98,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             bt.setEnabled(flag)
             bt.setVisible(flag)
 
-    def select_pdf_page(self):
-        if self.pdfloaded:
-            self.pagina_actual = self.spinBox.value() - 1
-
-
     def x_buttom_clicked(self):
 
         self.active_desactive_buttoms(False, (self.xButtom, self.spinBox, self.left_buttom, self.right_buttom, 
@@ -106,6 +107,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.paginas_pdf = []
         self.pdfloaded = False
         self.pagina_actual = 0
+        self.midi = None
 
     def slide_left(self):
         if self.pdfloaded:
@@ -116,110 +118,16 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         if self.pdfloaded:
             self.pagina_actual = (self.pagina_actual+1)%len(self.paginas_pdf)
             self.spinBox.setValue(self.pagina_actual + 1)
-    
-    def compute(self):
 
-        ret, capImage = self.cap.read()
- 
-        if ret and self.captureButton.isChecked():
-            self.colorImage = cv2.resize(capImage, (self.imageFrame.size().width(), self.imageFrame.size().height()))
-            self.imageVisor = cv2.resize(self.imageVisor, (self.imageFrame.size().width(), self.imageFrame.size().height()))
+###################################################################################################################################
 
-            self.colorImage = cv2.cvtColor(self.colorImage, cv2.COLOR_BGR2RGB)
-            np.copyto(self.imageVisor, self.colorImage)
-            self.grayImage = cv2.cvtColor(self.colorImage, cv2.COLOR_BGR2GRAY)
-
-        #self.profile_detector()
-        if self.pdfloaded and self.detect_buttom.isChecked():
-            self.pass_with_face()
-
-        self.update()
+############################################################# Files #############################################################
 
 
-    def select_image_visor(self):
-    
-        if self.useCameraButtom.isChecked():
+    def select_pdf_page(self):
+        if self.pdfloaded:
+            self.pagina_actual = self.spinBox.value() - 1
 
-            self.active_desactive_buttoms(False, (self.spinBox, self.xButtom, self.right_buttom, self.left_buttom,
-                                                  self.edit_buttom, self.text_buttom, self.play_buttom))
-
-            return self.imageVisor
-        
-        else:
-            if self.pdfloaded is True:
-
-                self.active_desactive_buttoms(True, (self.spinBox, self.xButtom, self.right_buttom, self.left_buttom,
-                                                     self.edit_buttom, self.text_buttom, self.play_buttom))
-
-                return self.paginas_pdf[self.pagina_actual]
-
-    
-        return None
-
-
-    def paintEvent(self, e):
-        qp = QtGui.QPainter(self)        
-
-        imagen = self.select_image_visor()
-        
-        if imagen is not None:
-            w = (self.imageFrame.size().width()//4)*4 if self.useCameraButtom.isChecked() else (self.imageFrame.size().width()//8)*4
-            h = self.imageFrame.size().height()
-            cvImage = cv2.resize(imagen, (w,h))
-
-            if len(imagen.shape) == 2:
-                qImg = QtGui.QImage(cvImage,w, h,QtGui.QImage.Format_Grayscale8)
-            else:
-                qImg = QtGui.QImage(cvImage,w, h,QtGui.QImage.Format_RGB888)
-
-            if self.useCameraButtom.isChecked():
-                qp.drawImage(self.imageFrame.pos(), qImg)
-            else:
-                pos = self.imageFrame.pos()
-                new_pos = QPoint(pos.x() + self.imageFrame.size().width()//2 - w//2, pos.y())
-                qp.drawImage(new_pos, qImg)
-            
-        qp.end()
-
-    def profile_detector(self):
-        if self.detect_buttom.isChecked():
-            self.detector.cascade_profiles_detector(self.grayImage, self.imageVisor)        
-            
-    def facemark_detector(self):
-        if self.detect_buttom.isChecked():
-            self.detector.facemark_detector(self.grayImage, self.imageVisor)
-
-    def check_conditions(self, detecciones):
-        tiempos = list(detecciones.keys())
-        diff = (tiempos[-1] - tiempos[0]) * 1000
-
-        if diff > 200 and diff < 800:
-            return True
-        
-        return False
-    
-    def pass_with_face(self):
-        
-        prof_detection = self.detector.cascade_profiles_detector(self.grayImage)
-
-        if prof_detection is not None:
-            tipo, detection = prof_detection
-            self.detector.draw_detection(detection, self.imageVisor)
-            hora = time.time()
-            self.detections[hora] = (tipo, detection)
-        else:
-            if len(self.detections) != 0:
-                if(self.check_conditions(self.detections)):
-                    det = list(self.detections.values())
-                    tipo, _ = det[0]
-
-                    if tipo == 0:
-                        self.slide_right()
-                    if tipo == 1:
-                        self.slide_left()
-
-                self.detections.clear()
-        
 
     def getPDFinformation(self):
 
@@ -272,8 +180,138 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 self.spinBox.setRange(1, len(self.paginas_pdf))
 
         self.timer.timeout.connect(self.compute)
+
+###################################################################################################################################
+    
+############################################################# Detectors #############################################################
+
+    def profile_detector(self):
+        if self.detect_buttom.isChecked():
+            self.detector.cascade_profiles_detector(self.grayImage, self.imageVisor)        
             
-  
+    def facemark_detector(self):
+        if self.detect_buttom.isChecked():
+            self.detector.facemark_detector(self.grayImage, self.imageVisor)
+
+    def check_conditions(self, detecciones):
+        tiempos = list(detecciones.keys())
+        diff = (tiempos[-1] - tiempos[0]) * 1000
+
+        if diff > 200 and diff < 800:
+            return True
+        
+        return False
+    
+    def pass_with_face(self):
+        
+        prof_detection = self.detector.cascade_profiles_detector(self.grayImage)
+
+        if prof_detection is not None:
+            tipo, detection = prof_detection
+            self.detector.draw_detection(detection, self.imageVisor)
+            hora = time.time()
+            self.detections[hora] = (tipo, detection)
+        else:
+            if len(self.detections) != 0:
+                if(self.check_conditions(self.detections)):
+                    det = list(self.detections.values())
+                    tipo, _ = det[0]
+
+                    if tipo == 0:
+                        self.slide_right()
+                    if tipo == 1:
+                        self.slide_left()
+
+                self.detections.clear()
+        
+###################################################################################################################################
+
+############################################################# Events #############################################################
+
+    def paintEvent(self, e):
+        qp = QtGui.QPainter(self)        
+
+        imagen = self.select_image_visor()
+        
+        if imagen is not None:
+            w = (self.imageFrame.size().width()//4)*4 if self.useCameraButtom.isChecked() else (self.imageFrame.size().width()//8)*4
+            h = self.imageFrame.size().height()
+            cvImage = cv2.resize(imagen, (w,h))
+
+            if len(imagen.shape) == 2:
+                qImg = QtGui.QImage(cvImage,w, h,QtGui.QImage.Format_Grayscale8)
+            else:
+                qImg = QtGui.QImage(cvImage,w, h,QtGui.QImage.Format_RGB888)
+
+            if self.useCameraButtom.isChecked():
+                qp.drawImage(self.imageFrame.pos(), qImg)
+            else:
+                pos = self.imageFrame.pos()
+                new_pos = QPoint(pos.x() + self.imageFrame.size().width()//2 - w//2, pos.y())
+                qp.drawImage(new_pos, qImg)
+            
+        qp.end()
+
+    def mousePressEvent(self, event: QtGui.QMouseEvent):
+
+        if event.button == QtCore.Qt.LeftButton:
+            self.iniCoorSelected.setX(event.pos().x())
+            self.iniCoorSelected.setY(event.pos().y())
+
+            self.endCoorSelected.setX(event.pos().x())
+            self.endCoorSelected.setY(event.pos().y())
+
+            self.onSelection = True
+
+    def mouseMoveEvent(self, event: QtGui.QMouseEvent):
+        self.endCoorSelected.setX(event.pos().x())
+        self.endCoorSelected.setY(event.pos().y())
+
+    def mouseReleaseEvent(self, event: QtGui.QMouseEvent):
+        if self.pdfloaded == True and self.edit_buttom.isChecked():
+            cv2.rectangle(self.paginas_pdf[self.pagina_actual], (self.iniCoorSelected.x(), self.iniCoorSelected.y()),
+                          (self.endCoorSelected.x(), self.endCoorSelected.y()), (0,0,0))
+
+###################################################################################################################################
+    def compute(self):
+
+        ret, capImage = self.cap.read()
+ 
+        if ret and self.captureButton.isChecked():
+            self.colorImage = cv2.resize(capImage, (self.imageFrame.size().width(), self.imageFrame.size().height()))
+            self.imageVisor = cv2.resize(self.imageVisor, (self.imageFrame.size().width(), self.imageFrame.size().height()))
+
+            self.colorImage = cv2.cvtColor(self.colorImage, cv2.COLOR_BGR2RGB)
+            np.copyto(self.imageVisor, self.colorImage)
+            self.grayImage = cv2.cvtColor(self.colorImage, cv2.COLOR_BGR2GRAY)
+
+        #self.profile_detector()
+        if self.pdfloaded and self.detect_buttom.isChecked():
+            self.pass_with_face()
+
+        self.update()
+
+
+    def select_image_visor(self):
+    
+        if self.useCameraButtom.isChecked():
+
+            self.active_desactive_buttoms(False, (self.spinBox, self.xButtom, self.right_buttom, self.left_buttom,
+                                                  self.edit_buttom, self.text_buttom, self.play_buttom))
+
+            return self.imageVisor
+        
+        else:
+            if self.pdfloaded is True:
+
+                self.active_desactive_buttoms(True, (self.spinBox, self.xButtom, self.right_buttom, self.left_buttom,
+                                                     self.edit_buttom, self.text_buttom, self.play_buttom))
+
+                return self.paginas_pdf[self.pagina_actual]
+
+    
+        return None
+
 
 if __name__ == "__main__":
     import sys

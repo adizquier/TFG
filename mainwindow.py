@@ -46,12 +46,14 @@ class Ui_MainWindow(object):
         self.edit_buttom = QPushButton(self.centralwidget)
         self.edit_buttom.setObjectName(u"edit_buttom")
         self.edit_buttom.setMaximumSize(QSize(30, 30))
+        self.edit_buttom.setCheckable(True)
 
         self.horizontalLayout.addWidget(self.edit_buttom)
 
         self.text_buttom = QPushButton(self.centralwidget)
         self.text_buttom.setObjectName(u"text_buttom")
         self.text_buttom.setMaximumSize(QSize(30, 30))
+        self.text_buttom.setCheckable(True)
 
         self.horizontalLayout.addWidget(self.text_buttom)
 
