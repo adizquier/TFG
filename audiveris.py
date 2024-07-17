@@ -3,6 +3,12 @@ import shutil
 from music21 import converter
 import os
 
+def audiveris_aviable():
+    try:
+        subprocess.run(["flatpak", "run", "org.audiveris.audiveris", "-version"], capture_output=True)
+        return True
+    except (subprocess.CalledProcessError):
+        return False
 
 def convert_pdf_to_midi(pdf_file, midi_file, nombreArchivo):
     # Comando para convertir PDF a MIDI con Audiveris mediante Flatpak
@@ -13,7 +19,7 @@ def convert_pdf_to_midi(pdf_file, midi_file, nombreArchivo):
 
     try:
         # Ejecutar el comando
-        subprocess.run(command, check=True)
+        subprocess.run(command, check=True, capture_output=True)
         
         
         conv=converter.parse(midi_file+nombreArchivo+".mxl")

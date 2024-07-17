@@ -27,14 +27,15 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.timer.timeout.connect(self.compute)
         self.timer.start(30)
 
-        self.iniCoorSelected = QPoint()
-        self.endCoorSelected = QPoint()
+        self.iniCoorSelected = QtCore.QPoint()
+        self.endCoorSelected = QtCore.QPoint()
         self.onSelection = False
 
         self.detector = fd.FaceDetector()
 
         self.pdf = None
         self.midi = None
+        self.audiverisAviable = True
         self.pdfloaded = False
 
         self.paginas_pdf = []
@@ -102,6 +103,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         self.active_desactive_buttoms(False, (self.xButtom, self.spinBox, self.left_buttom, self.right_buttom, 
                                               self.edit_buttom, self.text_buttom, self.play_buttom))
+        
+        if self.audiverisAviable == False: self.play_buttom.setEnabled(False)
 
         self.pdf = None
         self.paginas_pdf = []
@@ -166,7 +169,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         rutaPDF, _ = QFileDialog.getOpenFileName(self, "Open File", "", "Files (*.midi *.pdf)")
 
         if rutaPDF:
-            self.getMidiPartiture(rutaPDF)
+            if audiveris.audiveris_aviable():
+                self.getMidiPartiture(rutaPDF)
+            else:
+                self.audiverisAviable = False
+
             self.pdf = pdf.open(rutaPDF)
 
             if self.pdf is not None:
@@ -176,6 +183,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
                 self.active_desactive_buttoms(True, (self.spinBox, self.xButtom, self.left_buttom, self.right_buttom,
                                                     self.edit_buttom, self.text_buttom, self.play_buttom))
+                
+                if self.audiverisAviable == False: self.play_buttom.setEnabled(False)
 
                 self.spinBox.setRange(1, len(self.paginas_pdf))
 
@@ -254,23 +263,40 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def mousePressEvent(self, event: QtGui.QMouseEvent):
 
-        if event.button == QtCore.Qt.LeftButton:
-            self.iniCoorSelected.setX(event.pos().x())
-            self.iniCoorSelected.setY(event.pos().y())
+        relative_pos = self.imageFrame.mapFrom(self, event.pos())
 
-            self.endCoorSelected.setX(event.pos().x())
-            self.endCoorSelected.setY(event.pos().y())
+        self.iniCoorSelected.setX(relative_pos.x())
+        self.iniCoorSelected.setY(relative_pos.y())
 
-            self.onSelection = True
+        self.endCoorSelected.setX(relative_pos.x())
+        self.endCoorSelected.setY(relative_pos.y())
+
+        self.onSelection = True
 
     def mouseMoveEvent(self, event: QtGui.QMouseEvent):
-        self.endCoorSelected.setX(event.pos().x())
-        self.endCoorSelected.setY(event.pos().y())
+        # Convertir a coordenadas relativas al visor
+        relative_pos = self.imageFrame.mapFrom(self, event.pos())
+
+        self.endCoorSelected.setX(relative_pos.x())
+        self.endCoorSelected.setY(relative_pos.y())
 
     def mouseReleaseEvent(self, event: QtGui.QMouseEvent):
         if self.pdfloaded == True and self.edit_buttom.isChecked():
-            cv2.rectangle(self.paginas_pdf[self.pagina_actual], (self.iniCoorSelected.x(), self.iniCoorSelected.y()),
-                          (self.endCoorSelected.x(), self.endCoorSelected.y()), (0,0,0))
+        # Convertir a coordenadas relativas al visor
+            relative_pos = self.imageFrame.mapFrom(self, event.pos())
+
+            self.endCoorSelected.setX(relative_pos.x())
+            self.endCoorSelected.setY(relative_pos.y())
+
+            # Dibujar el rectángulo en la página PDF
+            cv2.rectangle(
+                self.paginas_pdf[self.pagina_actual], 
+                (self.iniCoorSelected.x(), self.iniCoorSelected.y()), 
+                (self.endCoorSelected.x(), self.endCoorSelected.y()), 
+                (0, 0, 0)
+            )
+            # Reiniciar la selección
+            self.onSelection = False
 
 ###################################################################################################################################
     def compute(self):
@@ -298,6 +324,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
             self.active_desactive_buttoms(False, (self.spinBox, self.xButtom, self.right_buttom, self.left_buttom,
                                                   self.edit_buttom, self.text_buttom, self.play_buttom))
+            
 
             return self.imageVisor
         
@@ -306,6 +333,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
                 self.active_desactive_buttoms(True, (self.spinBox, self.xButtom, self.right_buttom, self.left_buttom,
                                                      self.edit_buttom, self.text_buttom, self.play_buttom))
+                
+                if self.audiverisAviable == False: self.play_buttom.setEnabled(False)
 
                 return self.paginas_pdf[self.pagina_actual]
 
