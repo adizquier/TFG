@@ -12,6 +12,7 @@ import audiveris
 import subprocess
 
 
+
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
@@ -42,6 +43,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.pagina_actual = 0
 
         self.detections = {}
+
+        self.rectangulo = ()
 
         self.spinBox.setVisible(False)
 
@@ -247,6 +250,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             h = self.imageFrame.size().height()
             cvImage = cv2.resize(imagen, (w,h))
 
+            if not self.useCameraButtom.isChecked() and self.pdfloaded:
+                if len(self.rectangulo) != 0 and self.edit_buttom.isChecked():
+
+                    cv2.rectangle(cvImage, self.rectangulo, (0,0,0))
+
             if len(imagen.shape) == 2:
                 qImg = QtGui.QImage(cvImage,w, h,QtGui.QImage.Format_Grayscale8)
             else:
@@ -288,13 +296,13 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.endCoorSelected.setX(relative_pos.x())
             self.endCoorSelected.setY(relative_pos.y())
 
-            # Dibujar el rectángulo en la página PDF
-            cv2.rectangle(
-                self.paginas_pdf[self.pagina_actual], 
-                (self.iniCoorSelected.x(), self.iniCoorSelected.y()), 
-                (self.endCoorSelected.x(), self.endCoorSelected.y()), 
-                (0, 0, 0)
-            )
+            x = self.iniCoorSelected.x()
+            y = self.iniCoorSelected.y()
+            width = abs(self.endCoorSelected.x() - self.iniCoorSelected.x())
+            height = abs( self.endCoorSelected.y() - self.iniCoorSelected.y())
+
+            self.rectangulo = (x, y, width, height)
+
             # Reiniciar la selección
             self.onSelection = False
 
