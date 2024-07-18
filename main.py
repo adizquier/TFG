@@ -246,6 +246,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         imagen = self.select_image_visor()
         
         if imagen is not None:
+
             w = (self.imageFrame.size().width()//4)*4 if self.useCameraButtom.isChecked() else (self.imageFrame.size().width()//8)*4
             h = self.imageFrame.size().height()
             cvImage = cv2.resize(imagen, (w,h))
@@ -253,7 +254,17 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             if not self.useCameraButtom.isChecked() and self.pdfloaded:
                 if len(self.rectangulo) != 0 and self.edit_buttom.isChecked():
 
-                    cv2.rectangle(cvImage, self.rectangulo, (0,0,0))
+                    rect = list(self.rectangulo)
+                    rect[0]-=self.imageFrame.size().width()//2 - w//2
+                    cv2.rectangle(cvImage, tuple(rect), (0,0,0))
+
+                    # Obtener las dimensiones de la imagen
+                    height, width = cvImage.shape[:2]
+
+                    # Redimensionar la imagen usando las dimensiones obtenidas
+                    img_resized = cv2.resize(cvImage, (width, height))
+                
+                    self.paginas_pdf[self.pagina_actual] = img_resized
 
             if len(imagen.shape) == 2:
                 qImg = QtGui.QImage(cvImage,w, h,QtGui.QImage.Format_Grayscale8)
@@ -265,6 +276,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             else:
                 pos = self.imageFrame.pos()
                 new_pos = QPoint(pos.x() + self.imageFrame.size().width()//2 - w//2, pos.y())
+                
                 qp.drawImage(new_pos, qImg)
             
         qp.end()
