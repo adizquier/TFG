@@ -6,7 +6,7 @@ import os
 def audiveris_aviable():
     try:
         subprocess.run(["flatpak", "run", "org.audiveris.audiveris", "-version"], capture_output=True)
-        return True
+        return False
     except (subprocess.CalledProcessError):
         return False
 

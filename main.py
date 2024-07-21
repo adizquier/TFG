@@ -10,6 +10,7 @@ import time
 import os
 import audiveris
 import subprocess
+import notesDetection
 
 
 
@@ -46,6 +47,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         self.rectangulo = ()
 
+        self.aubioObject = notesDetection.aubioClass()
+
         self.spinBox.setVisible(False)
 
         self.xButtom.setIcon(QtGui.QIcon("./iconos/x_icon.png"))
@@ -75,6 +78,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.right_buttom.clicked.connect(self.slide_right)
         self.left_buttom.clicked.connect(self.slide_left)
         self.play_buttom.clicked.connect(self.reproducirMIDI)
+        self.text_buttom.clicked.connect(self.detect_notes)
 
 ############################################################# Buttoms #############################################################
 
@@ -238,6 +242,13 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         
 ###################################################################################################################################
 
+############################################################# Audio #############################################################
+
+    def detect_notes(self):
+        self.aubioObject.detect_note()
+###################################################################################################################################
+
+
 ############################################################# Events #############################################################
 
     def paintEvent(self, e):
@@ -265,6 +276,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                     img_resized = cv2.resize(cvImage, (width, height))
                 
                     self.paginas_pdf[self.pagina_actual] = img_resized
+                    self.rectangulo = ()
 
             if len(imagen.shape) == 2:
                 qImg = QtGui.QImage(cvImage,w, h,QtGui.QImage.Format_Grayscale8)
