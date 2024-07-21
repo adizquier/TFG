@@ -11,6 +11,7 @@ import os
 import audiveris
 import subprocess
 import notesDetection
+import mido
 
 
 
@@ -213,7 +214,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         tiempos = list(detecciones.keys())
         diff = (tiempos[-1] - tiempos[0]) * 1000
 
-        if diff > 200 and diff < 800:
+        if diff > 175 and diff < 350:
             return True
         
         return False
@@ -245,7 +246,27 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 ############################################################# Audio #############################################################
 
     def detect_notes(self):
-        self.aubioObject.detect_note()
+        midi_file = mido.MidiFile(self.midi)
+        track = midi_file.tracks[1]
+        falloDetectado = False
+
+        self.aubioObject.open_stream()
+
+        for msg in track:
+
+            if msg.type == 'note_on':
+                nota = msg.note
+                notaDetectada = self.aubioObject.detect_note()
+
+                if nota != notaDetectada:
+                    falloDetectado = True
+                    break
+        
+        if falloDetectado:
+            print("Error detectado, nota: {}, nota detectada: {}".format(nota, notaDetectada))
+        
+        self.aubioObject.close_stream()
+
 ###################################################################################################################################
 
 

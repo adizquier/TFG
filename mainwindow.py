@@ -53,7 +53,7 @@ class Ui_MainWindow(object):
         self.text_buttom = QPushButton(self.centralwidget)
         self.text_buttom.setObjectName(u"text_buttom")
         self.text_buttom.setMaximumSize(QSize(30, 30))
-        self.text_buttom.setCheckable(True)
+        self.text_buttom.setCheckable(False)
 
         self.horizontalLayout.addWidget(self.text_buttom)
 

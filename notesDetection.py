@@ -14,7 +14,7 @@ class aubioClass:
         self.samplerate = 44100
 
         # Inicialización de PyAudio
-        self.p = pyaudio.PyAudio()
+        self.p = None
 
         # Configuración de parámetros para el análisis de notas
         self.win_s = 512  # Tamaño de la ventana FFT
@@ -51,6 +51,8 @@ class aubioClass:
         return True
     
     def open_stream(self):
+        self.p = pyaudio.PyAudio()
+
         self.stream = self.p.open(format=self.pyaudio_format,
                 channels=self.n_channels,
                 rate=self.samplerate,
@@ -58,35 +60,42 @@ class aubioClass:
                 frames_per_buffer=self.buffer_size)
         
         self.streamOpen = True
-        
+
+    def close_stream(self):
+        self.stream.stop_stream()
+        self.stream.close()
+
+        self.p.terminate()
+        self.streamOpen = False
 
     def detect_note(self):
-        if self.streamOpen == False:        
-            self.open_stream()
+        if self.streamOpen == True:        
             self.tiempo = time.time() * 1000
   
-        for _ in range(self.warmup_iterations):
-            self.stream.read(self.buffer_size)
+            for _ in range(self.warmup_iterations):
+                self.stream.read(self.buffer_size)
 
-        while True:
-            # Leer datos del stream de audio
-            audiobuffer = self.stream.read(self.buffer_size)
-            signal = np.frombuffer(audiobuffer, dtype=np.float32)
+            while True:
+                # Leer datos del stream de audio
+                audiobuffer = self.stream.read(self.buffer_size)
+                signal = np.frombuffer(audiobuffer, dtype=np.float32)
 
-            # Calcular la energía de la señal
-            intensity = np.sum(signal**2)
+                # Calcular la energía de la señal
+                intensity = np.sum(signal**2)
 
-            # Realizar el análisis de notas
-            new_note = self.notes_o(signal)
+                # Realizar el análisis de notas
+                new_note = self.notes_o(signal)
 
-            if new_note[0] != 0:
-                
-                t = time.time() *1000
-                diff = int(t - self.tiempo)
+                if new_note[0] != 0:
+                    
+                    t = time.time() *1000
+                    diff = int(t - self.tiempo)
 
-                if not self.check_conditions(new_note, intensity, diff): continue
+                    if not self.check_conditions(new_note, intensity, diff): continue
 
-                self.tiempo = t
-                self.last_vel = new_note[1]
+                    self.tiempo = t
+                    self.last_vel = new_note[1]
 
-                print("Nota MIDI: {}, Velocidad: {}, Intensidad (suavizada): {:.2f}, Duration Anterior: {}, Anterior {}".format(int(new_note[0]), new_note[1], intensity, diff, new_note[2]))
+                    print("Nota MIDI: {}, Velocidad: {}, Intensidad (suavizada): {:.2f}, Duration Anterior: {}, Anterior {}".format(int(new_note[0]), new_note[1], intensity, diff, new_note[2]))
+
+                    return new_note[0]
