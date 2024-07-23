@@ -64,11 +64,11 @@ def getMIDIpartiture(pdf, diccionarioMIDI):
         createDir(XML_DIR)
         createDir(outputMIDI)
 
-        for i, page in enumerate(os.listdir(IMAGES_DIR)):
+        for i, page in enumerate(sorted(os.listdir(IMAGES_DIR))):
             rutaPag = os.path.join(IMAGES_DIR, page)
    
             midi_page = audiveris.convert_pages_to_midi(rutaPag, XML_DIR, outputMIDI, os.path.splitext(page)[0])
-            diccionarioMIDI[i+1] = midi_page
+            diccionarioMIDI[i] = midi_page
 
 
         deleteDir(XML_DIR)

@@ -79,7 +79,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.xButtom.clicked.connect(self.x_buttom_clicked)
         self.right_buttom.clicked.connect(self.slide_right)
         self.left_buttom.clicked.connect(self.slide_left)
-        self.play_buttom.clicked.connect(self.reproducirMIDI)
+        self.play_buttom.clicked.connect(self.reproducirPagina)
         self.text_buttom.clicked.connect(self.detect_notes)
 
 ############################################################# Buttoms #############################################################
@@ -139,27 +139,13 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         if self.pdfloaded:
             self.pagina_actual = self.spinBox.value() - 1
 
+    def reproducirPagina(self):
+        pagina = self.diccionarioMIDI[self.pagina_actual]
 
-    def getMidiPartiture(self, rutaPDF):
-        nombreArchivo = os.path.splitext(os.path.basename(rutaPDF))[0]
-        directorioAlmacenamiento = "/home/adrian/Documentos/archivosMIDI/" #audiveris solo tiene acceso a la carpeta Documentos
-        
-
-        if not os.path.exists(directorioAlmacenamiento):
-            os.mkdir(directorioAlmacenamiento)
-        
-        rutaMIDI = directorioAlmacenamiento + nombreArchivo + "/"
-
-        if not os.path.exists(rutaMIDI):
-            os.mkdir(rutaMIDI)
-
-        self.midi = audiveris.convert_pdf_to_midi(rutaPDF, rutaMIDI, nombreArchivo)
-
-
-    def reproducirMIDI(self):
-
-        command = ["timidity", self.midi]
+        command = ["timidity", pagina]
         subprocess.run(command)
+
+        self.slide_right()
 
 
     def loadPDF(self):
@@ -174,6 +160,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
                 if audiveris.audiveris_aviable():
                     fm.getMIDIpartiture(pdf, self.diccionarioMIDI)
+                    self.audiverisAviable = True
                 else:
                     self.audiverisAviable = False
 

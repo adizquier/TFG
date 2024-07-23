@@ -14,7 +14,7 @@ class aubioClass:
         self.samplerate = 44100
 
         # Inicialización de PyAudio
-        self.p = None
+        self.p = pyaudio.PyAudio()
 
         # Configuración de parámetros para el análisis de notas
         self.win_s = 512  # Tamaño de la ventana FFT
@@ -51,7 +51,6 @@ class aubioClass:
         return True
     
     def open_stream(self):
-        self.p = pyaudio.PyAudio()
 
         self.stream = self.p.open(format=self.pyaudio_format,
                 channels=self.n_channels,
@@ -65,7 +64,6 @@ class aubioClass:
         self.stream.stop_stream()
         self.stream.close()
 
-        self.p.terminate()
         self.streamOpen = False
 
     def detect_note(self):
