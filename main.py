@@ -3,7 +3,6 @@ import numpy as np
 import cv2
 from mainwindow import Ui_MainWindow
 from PySide2.QtCore import QPoint
-import fitz as pdf
 from PySide2.QtWidgets import QFileDialog
 import faceDetector as fd
 import time
@@ -12,6 +11,7 @@ import audiveris
 import subprocess
 import notesDetection
 import mido
+import fileManagement as fm
 
 
 
@@ -36,9 +36,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         self.detector = fd.FaceDetector()
 
-        self.pdf = None
+        self.diccionarioMIDI = {}
+
         self.midi = None
-        self.audiverisAviable = True
+        self.audiverisAviable = False
         self.pdfloaded = False
 
         self.paginas_pdf = []
@@ -114,7 +115,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         
         if self.audiverisAviable == False: self.play_buttom.setEnabled(False)
 
-        self.pdf = None
         self.paginas_pdf = []
         self.pdfloaded = False
         self.pagina_actual = 0
@@ -138,15 +138,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def select_pdf_page(self):
         if self.pdfloaded:
             self.pagina_actual = self.spinBox.value() - 1
-
-
-    def getPDFinformation(self):
-
-        for page in self.pdf:
-            pix = page.get_pixmap()
-            img_array = np.frombuffer(pix.samples, dtype=np.uint8).reshape(pix.height, pix.width, pix.n)
-
-            self.paginas_pdf.append(img_array)
 
 
     def getMidiPartiture(self, rutaPDF):
@@ -174,27 +165,30 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def loadPDF(self):
         self.timer.timeout.disconnect(self.compute)
 
-        rutaPDF, _ = QFileDialog.getOpenFileName(self, "Open File", "", "Files (*.midi *.pdf)")
+        if not self.pdfloaded:
+            rutaPDF, _ = QFileDialog.getOpenFileName(self, "Open File", "", "Files (*.midi *.pdf)")
 
-        if rutaPDF:
-            if audiveris.audiveris_aviable():
-                self.getMidiPartiture(rutaPDF)
-            else:
-                self.audiverisAviable = False
-
-            self.pdf = pdf.open(rutaPDF)
-
-            if self.pdf is not None:
-                self.getPDFinformation()
-
-                self.pdfloaded = True
-
-                self.active_desactive_buttoms(True, (self.spinBox, self.xButtom, self.left_buttom, self.right_buttom,
-                                                    self.edit_buttom, self.text_buttom, self.play_buttom))
+            if rutaPDF:
                 
-                if self.audiverisAviable == False: self.play_buttom.setEnabled(False)
+                pdf = fm.getPDFinformation(rutaPDF, self.paginas_pdf)
 
-                self.spinBox.setRange(1, len(self.paginas_pdf))
+                if audiveris.audiveris_aviable():
+                    fm.getMIDIpartiture(pdf, self.diccionarioMIDI)
+                else:
+                    self.audiverisAviable = False
+
+                if len(self.paginas_pdf) != 0:
+
+                    self.pdfloaded = True
+
+                    self.active_desactive_buttoms(True, (self.spinBox, self.xButtom, self.left_buttom, self.right_buttom,
+                                                        self.edit_buttom, self.text_buttom, self.play_buttom))
+                    
+                    if self.audiverisAviable == False: self.play_buttom.setEnabled(False)
+
+                    self.spinBox.setRange(1, len(self.paginas_pdf))
+                
+                pdf.close()
 
         self.timer.timeout.connect(self.compute)
 
