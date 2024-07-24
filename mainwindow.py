@@ -50,12 +50,12 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout.addWidget(self.edit_buttom)
 
-        self.text_buttom = QPushButton(self.centralwidget)
-        self.text_buttom.setObjectName(u"text_buttom")
-        self.text_buttom.setMaximumSize(QSize(30, 30))
-        self.text_buttom.setCheckable(False)
+        self.micro_buttom = QPushButton(self.centralwidget)
+        self.micro_buttom.setObjectName(u"micro_buttom")
+        self.micro_buttom.setMaximumSize(QSize(30, 30))
+        self.micro_buttom.setCheckable(False)
 
-        self.horizontalLayout.addWidget(self.text_buttom)
+        self.horizontalLayout.addWidget(self.micro_buttom)
 
         self.play_buttom = QPushButton(self.centralwidget)
         self.play_buttom.setObjectName(u"play_buttom")
@@ -156,7 +156,7 @@ class Ui_MainWindow(object):
         MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"MainWindow", None))
         self.xButtom.setText("")
         self.edit_buttom.setText("")
-        self.text_buttom.setText("")
+        self.micro_buttom.setText("")
         self.play_buttom.setText("")
         self.useCameraButtom.setText(QCoreApplication.translate("MainWindow", u"Use camera", None))
         self.captureButton.setText(QCoreApplication.translate("MainWindow", u"Stop capture", None))

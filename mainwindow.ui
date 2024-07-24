@@ -79,7 +79,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QPushButton" name="text_buttom">
+         <widget class="QPushButton" name="micro_buttom">
           <property name="maximumSize">
            <size>
             <width>30</width>

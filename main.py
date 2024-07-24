@@ -37,16 +37,15 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.detector = fd.FaceDetector()
 
         self.diccionarioMIDI = {}
-
-        self.midi = None
+        self.reproduciendo = False
         self.audiverisAviable = False
-        self.pdfloaded = False
+        self.escuchando = False
 
+        self.pdfloaded = False
         self.paginas_pdf = []
         self.pagina_actual = 0
 
         self.detections = {}
-
         self.rectangulo = ()
 
         self.aubioObject = notesDetection.aubioClass()
@@ -65,8 +64,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.edit_buttom.setIcon(QtGui.QIcon("./iconos/edit_icon.png"))
         self.edit_buttom.setVisible(False)
 
-        self.text_buttom.setIcon(QtGui.QIcon("./iconos/text_icon.png"))
-        self.text_buttom.setVisible(False)
+        self.micro_buttom.setIcon(QtGui.QIcon("./iconos/micro_icon.png"))
+        self.micro_buttom.setVisible(False)
 
         self.play_buttom.setIcon(QtGui.QIcon("./iconos/play_icon.png"))
         self.play_buttom.setVisible(False)
@@ -79,8 +78,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.xButtom.clicked.connect(self.x_buttom_clicked)
         self.right_buttom.clicked.connect(self.slide_right)
         self.left_buttom.clicked.connect(self.slide_left)
-        self.play_buttom.clicked.connect(self.reproducirPagina)
-        self.text_buttom.clicked.connect(self.detect_notes)
+        self.play_buttom.clicked.connect(self.reproducir)
+        self.micro_buttom.clicked.connect(self.escuchar)
 
 ############################################################# Buttoms #############################################################
 
@@ -111,7 +110,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def x_buttom_clicked(self):
 
         self.active_desactive_buttoms(False, (self.xButtom, self.spinBox, self.left_buttom, self.right_buttom, 
-                                              self.edit_buttom, self.text_buttom, self.play_buttom))
+                                              self.edit_buttom, self.micro_buttom, self.play_buttom))
         
         if self.audiverisAviable == False: self.play_buttom.setEnabled(False)
 
@@ -139,13 +138,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         if self.pdfloaded:
             self.pagina_actual = self.spinBox.value() - 1
 
-    def reproducirPagina(self):
-        pagina = self.diccionarioMIDI[self.pagina_actual]
-
-        command = ["timidity", pagina]
-        subprocess.run(command)
-
-        self.slide_right()
 
 
     def loadPDF(self):
@@ -169,7 +161,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                     self.pdfloaded = True
 
                     self.active_desactive_buttoms(True, (self.spinBox, self.xButtom, self.left_buttom, self.right_buttom,
-                                                        self.edit_buttom, self.text_buttom, self.play_buttom))
+                                                        self.edit_buttom, self.micro_buttom, self.play_buttom))
                     
                     if self.audiverisAviable == False: self.play_buttom.setEnabled(False)
 
@@ -226,8 +218,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
 ############################################################# Audio #############################################################
 
-    def detect_notes(self):
-        midi_file = mido.MidiFile(self.midi)
+    def detect_notes_page(self):
+        midi = self.diccionarioMIDI[self.pagina_actual]
+
+        midi_file = mido.MidiFile(midi)
         track = midi_file.tracks[1]
         falloDetectado = False
 
@@ -245,8 +239,32 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         
         if falloDetectado:
             print("Error detectado, nota: {}, nota detectada: {}".format(nota, notaDetectada))
+            self.escuchando = False
+        else:
+            if self.pagina_actual + 1 == len(self.diccionarioMIDI):
+                self.escuchando = False
+            
+            else: self.slide_right()
+
         
         self.aubioObject.close_stream()
+
+    def escuchar(self):
+        self.escuchando = True
+
+    def reproducirPagina(self):
+        pagina = self.diccionarioMIDI[self.pagina_actual]
+
+        command = ["timidity", pagina]
+        subprocess.run(command)
+
+        if self.pagina_actual + 1 == len(self.diccionarioMIDI):
+            self.reproduciendo = False
+
+        else: self.slide_right()
+
+    def reproducir(self):
+        self.reproduciendo = True
 
 ###################################################################################################################################
 
@@ -349,6 +367,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         if self.pdfloaded and self.detect_buttom.isChecked():
             self.pass_with_face()
 
+        if self.reproduciendo:
+            self.reproducirPagina()
+
+        if self.escuchando:
+            self.detect_notes_page()
+
         self.update()
 
 
@@ -357,7 +381,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         if self.useCameraButtom.isChecked():
 
             self.active_desactive_buttoms(False, (self.spinBox, self.xButtom, self.right_buttom, self.left_buttom,
-                                                  self.edit_buttom, self.text_buttom, self.play_buttom))
+                                                  self.edit_buttom, self.micro_buttom, self.play_buttom))
             
 
             return self.imageVisor
@@ -366,7 +390,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             if self.pdfloaded is True:
 
                 self.active_desactive_buttoms(True, (self.spinBox, self.xButtom, self.right_buttom, self.left_buttom,
-                                                     self.edit_buttom, self.text_buttom, self.play_buttom))
+                                                     self.edit_buttom, self.micro_buttom, self.play_buttom))
                 
                 if self.audiverisAviable == False: self.play_buttom.setEnabled(False)
 

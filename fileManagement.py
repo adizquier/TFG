@@ -23,7 +23,7 @@ def getPDFinformation(rutaPDF, paginas_pdf):
 
     return pdf
 
-def loadPDFpages(pdf, zoom_x=3.0, zoom_y=3.0):
+def loadPDFpages(pdf, zoom_x=4.0, zoom_y=4.0):
     if os.path.exists(IMAGES_DIR):
 
         for i, page in enumerate(pdf):
