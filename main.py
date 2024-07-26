@@ -1,24 +1,44 @@
 from PySide2 import QtGui, QtWidgets, QtCore
+from PySide2.QtWidgets import QWidget
 import numpy as np
 import cv2
 from mainwindow import Ui_MainWindow
+from mensajeSalida import Ui_Form
 from PySide2.QtCore import QPoint
 from PySide2.QtWidgets import QFileDialog
 import faceDetector as fd
 import time
-import os
 import audiveris
 import subprocess
 import notesDetection
 import mido
 import fileManagement as fm
 
+class messageOut (QWidget, Ui_Form):
+    def __init__(self):
+        super(messageOut, self).__init__()
+        self.setupUi(self)
 
+    def putImage(self, flag):
+        check = QtGui.QPixmap("./iconos/check_icon.png").scaled(70,70)
+        x = QtGui.QPixmap("./iconos/xBad_icon.png").scaled(70,70)
+
+        self.texto.setWordWrap(True)
+        self.texto.setAlignment(QtCore.Qt.AlignCenter)
+
+        if flag:
+            self.imagen.setPixmap(check)
+            self.texto.setText("¡¡ Interpretación de la obra correcta !!")
+        else:
+            self.imagen.setPixmap(x)
+            self.texto.setText("¡¡ Se ha detectado un fallo !!")
 
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
         self.setupUi(self)
+
+        self.formSalida = messageOut()
 
         self.cap = cv2.VideoCapture(0)
         self.colorImage = np.zeros((self.imageFrame.size().width(), self.imageFrame.size().height(),3), dtype = np.uint8)
@@ -239,10 +259,17 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         
         if falloDetectado:
             print("Error detectado, nota: {}, nota detectada: {}".format(nota, notaDetectada))
+
+            self.formSalida.putImage(False)
+            self.formSalida.show()
+
             self.escuchando = False
         else:
             if self.pagina_actual + 1 == len(self.diccionarioMIDI):
                 self.escuchando = False
+
+                self.formSalida.putImage(True)
+                self.formSalida.show()
             
             else: self.slide_right()
 
