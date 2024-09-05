@@ -1,7 +1,5 @@
 import subprocess
-import shutil
 from music21 import converter
-import os
 
 def audiveris_aviable():
     try:

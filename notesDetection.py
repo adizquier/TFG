@@ -1,9 +1,7 @@
 import pyaudio
 import numpy as np
 from aubio import notes
-from mido import Message, MetaMessage, MidiFile, MidiTrack, second2tick, bpm2tempo
 import time
-from scipy.signal import butter, lfilter
 
 class aubioClass:
     def __init__(self):

@@ -1,5 +1,4 @@
 import os
-import mido
 import fitz
 import numpy as np
 from PIL import Image
@@ -27,10 +26,10 @@ def loadPDFpages(pdf, zoom_x=4.0, zoom_y=4.0):
     if os.path.exists(IMAGES_DIR):
 
         for i, page in enumerate(pdf):
-            # Crear una matriz de transformación para ajustar la resolución (zoom)
+            # Crear una matriz de transformacion para ajustar la resolucion (zoom)
             matrix = fitz.Matrix(zoom_x, zoom_y)
             
-            # Renderizar la página con la matriz de zoom
+            # Renderizar la pagina con la matriz de zoom
             pix = page.get_pixmap(matrix=matrix)
             
             # Convertir el buffer de la imagen en un array de numpy

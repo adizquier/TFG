@@ -207,7 +207,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         tiempos = list(detecciones.keys())
         diff = (tiempos[-1] - tiempos[0]) * 1000
 
-        if diff > 175 and diff < 350:
+        if diff > 175 and diff < 400:
             return True
         
         return False
@@ -400,7 +400,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         if self.escuchando:
             self.detect_notes_page()
 
-        self.update()
+        self.repaint()
 
 
     def select_image_visor(self):
